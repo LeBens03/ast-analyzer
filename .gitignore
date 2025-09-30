@@ -1,0 +1,22 @@
+# Maven build output
+/target/
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+
+# Eclipse annotations processing
+.factorypath
+
+# IntelliJ IDEA (if someone uses it too)
+*.iml
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
