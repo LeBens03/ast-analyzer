@@ -5,9 +5,30 @@ import java.awt.*;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * GUI for displaying application statistics in a window.
+ * <p>
+ * Uses Swing to show statistics about classes, methods, lines, packages, and more.
+ */
 public class AppStatsGUI {
 
     // Méthode pour afficher les statistiques
+    /**
+     * Displays the statistics in a graphical window.
+     *
+     * @param totalClasses Total number of classes
+     * @param totalMethods Total number of methods
+     * @param totalLines Total number of lines of code
+     * @param totalPackages Total number of packages
+     * @param avgMethodsPerClass Average number of methods per class
+     * @param avgLinesPerMethod Average number of lines per method
+     * @param avgAttributesPerClass Average number of attributes per class
+     * @param topByMethods List of class names in the top 10% by number of methods
+     * @param topByAttributes List of class names in the top 10% by number of attributes
+     * @param topBoth Set of class names in both top categories
+     * @param moreThanX List of class names with more than X methods
+     * @param maxParams Maximum number of parameters in any method
+     */
     public static void displayStats(int totalClasses, int totalMethods, int totalLines,
                                     long totalPackages, double avgMethodsPerClass,
                                     double avgLinesPerMethod, double avgAttributesPerClass,

@@ -22,8 +22,34 @@ import analyzer.Utils.MethodInfo;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 
+/**
+ * Analyzer is a tool for analyzing Java source files and directories.
+ * <p>
+ * It computes various statistics about the codebase, such as:
+ * <ul>
+ *   <li>Number of classes, methods, lines of code, packages</li>
+ *   <li>Average methods/attributes per class, average lines per method</li>
+ *   <li>Top 10% classes by methods/attributes, intersection of these sets</li>
+ *   <li>Classes with more than X methods</li>
+ *   <li>Top 10% methods by lines of code (per class)</li>
+ *   <li>Maximum number of parameters in any method</li>
+ * </ul>
+ * It also builds a call graph and exports it in DOT and HTML formats.
+ * <p>
+ * Usage: <code>java Analyzer &lt;path-to-java-file-or-directory&gt;</code>
+ * <p>
+ * Dependencies: Eclipse JDT Core (ASTParser)
+ */
 public class Analyzer {
-
+    /**
+     * Entry point for the Analyzer tool.
+     * <p>
+     * Reads Java source files from the given path, analyzes their structure, and prints statistics
+     * about classes, methods, lines of code, packages, and more. Also generates call graphs.
+     *
+     * @param args Path to a Java file or directory containing Java files.
+     * @throws IOException if file reading fails
+     */
 	public static void main(String[] args) throws IOException {
 		if (args.length == 0) {
 			System.out.println("Usage: java Analyzer <chemin-fichier-ou-dossier>");
@@ -212,7 +238,7 @@ public class Analyzer {
                 System.out.println("10) Classes dans les deux catégories : " + topBoth);
                 
                 // 11) Les classes qui possèdent plus de X méthodes (la valeur de X est donnée)
-                int X = 5; 
+                int X = 2; 
                 List<ClassInfo> moreThanX = classes.stream().filter(c -> c.nbMethods > X).collect(Collectors.toList());
                 System.out.println("11) Classes avec plus de " + X + " méthodes : " +
                         moreThanX.stream().map(c -> c.name).collect(Collectors.toList()));

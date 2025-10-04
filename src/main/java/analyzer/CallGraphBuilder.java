@@ -7,10 +7,16 @@ import java.util.List;
 import analyzer.Utils.ClassInfo;
 import analyzer.Utils.MethodInfo;
 
+/**
+ * Utility class for building and exporting call graphs of Java methods.
+ * <p>
+ * Provides methods to display the call graph in text, export to DOT (GraphViz), and generate an interactive HTML graph.
+ */
 public class CallGraphBuilder {
-    
     /**
-     * Affiche le graphe d'appel sous forme textuelle
+     * Displays the call graph in the console in a readable format.
+     *
+     * @param classes List of analyzed classes containing method call information
      */
     public static void displayCallGraph(List<ClassInfo> classes) {
         System.out.println("\n==== GRAPHE D'APPEL ====\n");
@@ -33,7 +39,10 @@ public class CallGraphBuilder {
     }
     
     /**
-     * Génère un fichier DOT (GraphViz) du graphe d'appel
+     * Generates a DOT (GraphViz) file representing the call graph.
+     *
+     * @param classes List of analyzed classes containing method call information
+     * @param outputPath Path to the output DOT file
      */
     public static void generateDotGraph(List<ClassInfo> classes, String outputPath) {
         try (PrintWriter writer = new PrintWriter(outputPath)) {
@@ -87,6 +96,9 @@ public class CallGraphBuilder {
     
     /**
      * Génère un graphe au format HTML interactif (avec vis.js via CDN)
+     *
+     * @param classes Liste des classes analysées contenant des informations sur les appels de méthodes
+     * @param outputPath Chemin vers le fichier HTML de sortie
      */
     public static void generateHtmlGraph(List<ClassInfo> classes, String outputPath) {
         try (PrintWriter writer = new PrintWriter(outputPath)) {
