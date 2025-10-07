@@ -15,19 +15,19 @@ L'application calcule :
 8. **Top 10% des classes par nombre de méthodes** : Liste les classes avec le plus de méthodes.
 9. **Top 10% des classes par nombre d’attributs** : Liste les classes avec le plus d’attributs.
 10. **Classes dans les deux catégories précédentes** : Intersection des deux tops.
-11. **Classes avec plus de X méthodes** : Liste les classes ayant plus de X méthodes (X configurable dans le code).
+11. **Classes avec plus de X méthodes** : Liste les classes ayant plus de X méthodes (X configurable dynamiquement).
 12. **Top 10% des méthodes par nombre de lignes (par classe)** : Méthodes les plus longues par classe.
 13. **Nombre maximal de paramètres dans toutes les méthodes**.
 
 ### Exercice 2 : Graphe d'appel
-- **Construction du graphe d'appel** : Affiche le graphe d'appel des méthodes (textuel, DOT pour GraphViz, HTML interactif).
+- **Construction du graphe d'appel** : Affiche le graphe d'appel des méthodes (textuel, HTML interactif).
 - **Interface graphique (optionnelle)** : Affiche les statistiques dans une fenêtre Swing.
 
 ## Structure du projet
 - `Analyzer.java` : Point d'entrée, analyse le code et calcule les statistiques.
 - `Utils.java` : Définitions des structures `ClassInfo` et `MethodInfo`.
 - `AppStatsGUI.java` : Interface graphique Swing pour afficher les statistiques.
-- `CallGraphBuilder.java` : Génère et affiche le graphe d'appel (console, DOT, HTML).
+- `CallGraphBuilder.java` : Génère et affiche le graphe d'appel (console, HTML).
 
 ## Installation
 
@@ -45,24 +45,17 @@ L'application calcule :
 3. **Exécution** :
    Pour analyser un fichier ou dossier Java :
    ```bash
-   java -cp target/classes analyzer.Analyzer <chemin-fichier-ou-dossier>
-   ```
-   Exemple :
-   ```bash
-   java -cp target/classes analyzer.Analyzer src/main/java/
+   java -cp target/classes analyzer.Analyzer 
    ```
 
 ## Utilisation
-- Les statistiques sont affichées dans la console et dans une fenêtre graphique (Swing).
-- Le graphe d'appel est affiché dans la console, exporté au format DOT (`callgraph.dot`) et HTML interactif (`callgraph.html`).
-- Pour visualiser le graphe DOT :
-  ```bash
-  dot -Tpng callgraph.dot -o callgraph.png
-  ```
+- Au lancement, saisir le chemin de l'application que vous souhaitez analiser.Après un menu principal s'affiche :
+  1. Statistiques
+  2. Graphe d'appels
+  3. Quitter
+- Si vous choisissez "Statistiques", un sous-menu propose :
+  1. Afficher les statistiques dans la console
+  2. Afficher les statistiques dans une interface graphique (Swing)
+  0. Retour au menu principal
+- Le graphe d'appel est affiché dans la console, exporté au format HTML interactif (`callgraph.html`).
 - Ouvrez `callgraph.html` dans un navigateur pour une visualisation interactive.
-
-## Correspondance code/consignes
-- **Statistiques** : Calculées dans `Analyzer.java`, affichées via `AppStatsGUI.java`.
-- **Graphe d'appel** : Construit et exporté par `CallGraphBuilder.java`.
-- **Structures de données** : `Utils.java` (classes et méthodes).
-- **Interface graphique** : `AppStatsGUI.java` (Swing).
