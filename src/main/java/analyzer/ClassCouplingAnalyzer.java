@@ -9,14 +9,21 @@ import analyzer.Utils.ClassInfo;
 import analyzer.Utils.MethodInfo;
 
 /**
- * Analyzes class coupling in a Java application.
- * 
- * Coupling between two classes A and B is calculated as:
- * Coupling(A, B) = (Number of method calls between A and B) / (Total method calls in application)
- * 
- * This class generates:
- * - A coupling matrix showing coupling strength between all class pairs
- * - A weighted coupling graph in HTML/SVG format
+ * Computes class-level coupling based on method call signatures and generates
+ * visualizations for further analysis.
+ *
+ * <p>This analyzer inspects MethodInfo.callSignatures for every method and
+ * builds a coupling map between pairs of classes. Coupling values are
+ * normalized by the total number of inter-class calls discovered.</p>
+ *
+ * <p>Typical usage:
+ * <ol>
+ *   <li>Create an instance passing a list of ClassInfo populated by a parser (JDT/Spoon).</li>
+ *   <li>Use displayCouplings() / displayCouplingMatrix() for console output.</li>
+ *   <li>Call generateHtmlGraph(filename) to get an interactive Vis.js visualization.</li>
+ *   <li>Access normalized coupling values programmatically via getNormalizedCouplings().</li>
+ * </ol>
+ * </p>
  */
 public class ClassCouplingAnalyzer {
     
@@ -284,24 +291,44 @@ public class ClassCouplingAnalyzer {
         return "#87CEEB";
     }
     
+    /**
+     * Public getter for normalized couplings map (read-only view).
+     * Keys are canonicalized pairs "A-B" and values are normalized in [0..1].
+     *
+     * @return unmodifiable map of normalized coupling scores between class pairs
+     */
+    public Map<String, Double> getNormalizedCouplings() {
+        return Collections.unmodifiableMap(normalizedCouplings);
+    }
+
+    /**
+     * Returns normalized coupling between two named classes (order-insensitive).
+     *
+     * @param classA simple name of first class
+     * @param classB simple name of second class
+     * @return normalized coupling value (0.0 if not present)
+     */
     public double getCoupling(String classA, String classB) {
         String key = getCouplingKey(classA, classB);
         return normalizedCouplings.getOrDefault(key, 0.0);
     }
     
+    /**
+     * Returns raw (integer) number of inter-class calls observed between two classes.
+     *
+     * @param classA simple name of first class
+     * @param classB simple name of second class
+     * @return raw call count (0 if not present)
+     */
     public int getRawCoupling(String classA, String classB) {
         String key = getCouplingKey(classA, classB);
         return couplingMap.getOrDefault(key, 0);
     }
     
+    /**
+     * Returns the total number of inter-class calls discovered while building the coupling map.
+     */
     public int getTotalCouplings() {
         return totalCouplings;
-    }
-
-    /**
-     * Public getter for normalized couplings map (read-only view).
-     */
-    public Map<String, Double> getNormalizedCouplings() {
-        return Collections.unmodifiableMap(normalizedCouplings);
     }
 }

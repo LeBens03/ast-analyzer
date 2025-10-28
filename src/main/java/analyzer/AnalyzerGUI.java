@@ -11,8 +11,21 @@ import java.util.List;
 import analyzer.Utils.ClassInfo;
 
 /**
- * Modern unified GUI for the Analyzer tool.
- * Provides folder selection, statistics display, call graph generation, and coupling analysis.
+ * Swing-based graphical user interface for the Analyzer tool.
+ *
+ * <p>This class provides a lightweight desktop UI to:
+ * <ul>
+ *   <li>Select a source folder or Java file to analyze</li>
+ *   <li>Display project statistics</li>
+ *   <li>Generate interactive HTML visualizations: call graph and coupling graph</li>
+ *   <li>Run hierarchical module identification (optionally using Spoon)</li>
+ * </ul>
+ * </p>
+ *
+ * <p>Long-running operations (source parsing, graph generation, Spoon analysis)
+ * are executed in background threads using SwingWorker to avoid blocking the
+ * Event Dispatch Thread (EDT). Generated reports are written to the project
+ * root as HTML files and opened in the system browser when available.</p>
  */
 public class AnalyzerGUI {
     private List<ClassInfo> allClasses;
@@ -24,12 +37,17 @@ public class AnalyzerGUI {
     private static final Color ACCENT_COLOR = new Color(26, 188, 156);
     private static final Color BG_COLOR = new Color(236, 240, 241);
 
+    /**
+     * Creates an instance of AnalyzerGUI, initializing the folder selection process.
+     */
     public AnalyzerGUI() {
         showFolderSelector();
     }
 
     /**
-     * Displays initial folder selection dialog
+     * Shows the initial folder/file selection dialog and launches the analysis.
+     * This method creates a modal-like selection window and uses a SwingWorker
+     * to perform the source parsing off the EDT. On success it opens the main UI.
      */
     private void showFolderSelector() {
         JFrame selectorFrame = new JFrame("Analyzer - Sélection du dossier");
@@ -121,7 +139,9 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Displays the main analysis window
+     * Builds and shows the main application window. This method sets up the
+     * menu bar, side navigation and default content panel. The UI components
+     * are created on the EDT.
      */
     private void showMainWindow() {
         mainFrame = new JFrame("Analyzer - Analyse du code Java");
@@ -130,7 +150,6 @@ public class AnalyzerGUI {
         mainFrame.setLocationRelativeTo(null);
         mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        // Create menu bar
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(SECONDARY_COLOR);
         menuBar.setForeground(Color.WHITE);
@@ -150,7 +169,6 @@ public class AnalyzerGUI {
 
         mainFrame.setJMenuBar(menuBar);
 
-        // Create sidebar with buttons
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         sidePanel.setBackground(SECONDARY_COLOR);
@@ -177,11 +195,9 @@ public class AnalyzerGUI {
         sidePanel.add(couplingBtn);
         sidePanel.add(Box.createVerticalGlue());
 
-        // Content panel
         contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(BG_COLOR);
 
-        // Main container
         JPanel mainContainer = new JPanel(new BorderLayout());
         mainContainer.add(sidePanel, BorderLayout.WEST);
         mainContainer.add(contentPanel, BorderLayout.CENTER);
@@ -193,7 +209,8 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Display statistics view
+     * Replaces the content panel with the statistics view.
+     * This delegates to AppStatsGUINew which constructs the visual elements.
      */
     private void showStatistics() {
         contentPanel.removeAll();
@@ -204,11 +221,13 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Display call graph view
+     * Builds the call-graph generation panel. When the user triggers the
+     * generation, the HTML report is produced (callgraph.html) and opened
+     * in the system default browser.
      */
     private void showCallGraph() {
         contentPanel.removeAll();
-        JPanel graphPanel = createGraphPanel("Graphe d'Appels", 
+        JPanel graphPanel = createGraphPanel("Graphe d'Appels",
             () -> CallGraphBuilder.generateHtmlGraph(allClasses, "callgraph.html"));
         contentPanel.add(graphPanel, BorderLayout.CENTER);
         contentPanel.revalidate();
@@ -216,7 +235,13 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Display coupling analysis view
+     * Builds the coupling analysis panel. Supports two modes:
+     * <ul>
+     *   <li>Local coupling analysis using the in-memory ClassCouplingAnalyzer</li>
+     *   <li>Spoon-based analysis (when the Spoon checkbox is checked)</li>
+     * </ul>
+     * The heavy work is executed in a SwingWorker; results are written to
+     * coupling_graph.html and modules.html and then opened in the browser.
      */
     private void showCoupling() {
         contentPanel.removeAll();
@@ -258,9 +283,17 @@ public class AnalyzerGUI {
         thresholdField.setFont(new Font("Arial", Font.PLAIN, 13));
         centerPanel.add(thresholdField, gbc);
 
+        // Spoon checkbox
         gbc.gridy = 2;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
+        JCheckBox useSpoonCheck = new JCheckBox("Utiliser Spoon pour cette analyse");
+        useSpoonCheck.setBackground(BG_COLOR);
+        useSpoonCheck.setFont(new Font("Arial", Font.PLAIN, 13));
+        useSpoonCheck.setSelected(false);
+        centerPanel.add(useSpoonCheck, gbc);
+
+        gbc.gridy = 3;
         JButton generateBtn = createButton("Générer Graphe & Modules", ACCENT_COLOR);
         centerPanel.add(generateBtn, gbc);
 
@@ -278,26 +311,23 @@ public class AnalyzerGUI {
                 return;
             }
 
-            // Run analysis in background
-            double finalThreshold = threshold;
+            final double finalThreshold = threshold;
+            final boolean useSpoon = useSpoonCheck.isSelected();
+
             SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
-                    ClassCouplingAnalyzer analyzer = new ClassCouplingAnalyzer(allClasses);
-                    try {
+                    if (useSpoon) {
+                        SpoonRunner.runSpoonAnalysis(currentPath, finalThreshold);
+                    } else {
+                        ClassCouplingAnalyzer analyzer = new ClassCouplingAnalyzer(allClasses);
                         analyzer.generateHtmlGraph("coupling_graph.html");
-                    } catch (IOException ioe) {
-                        ioe.printStackTrace();
-                    }
 
-                    try {
-                        HierarchicalClusteringAnalyzer hc = new HierarchicalClusteringAnalyzer(allClasses, analyzer.getNormalizedCouplings());
+                        HierarchicalClusteringAnalyzer hc =
+                            new HierarchicalClusteringAnalyzer(allClasses, analyzer.getNormalizedCouplings());
                         hc.runClusteringAndIdentifyModules(finalThreshold);
                         hc.generateHtmlModules("modules.html");
-                    } catch (Exception exx) {
-                        exx.printStackTrace();
                     }
-
                     return null;
                 }
 
@@ -321,7 +351,13 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Create a panel for graph operations
+     * Create a reusable panel for graph-generation actions. The provided
+     * generateAction Runnable is executed synchronously by the button handler
+     * but should itself perform work off the EDT if long-running.
+     *
+     * @param title display title for the panel
+     * @param generateAction action to execute when the user clicks the button
+     * @return configured JPanel that can be added to the main content area
      */
     private JPanel createGraphPanel(String title, Runnable generateAction) {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
@@ -341,7 +377,7 @@ public class AnalyzerGUI {
 
         JLabel infoLabel = new JLabel(
             "<html><div style='text-align: center; width: 400px;'>" +
-            "Cliquez sur le bouton ci-dessous pour générer le " + title.toLowerCase() + 
+            "Cliquez sur le bouton ci-dessous pour générer le " + title.toLowerCase() +
             " interactif en HTML.<br><br>" +
             "Un navigateur s'ouvrira automatiquement avec la visualisation." +
             "</div></html>");
@@ -359,8 +395,7 @@ public class AnalyzerGUI {
                 JOptionPane.showMessageDialog(mainFrame,
                     "Graphe généré avec succès!\nLe fichier HTML s'ouvre dans votre navigateur...",
                     "Succès", JOptionPane.INFORMATION_MESSAGE);
-                
-                // Open in browser
+
                 String filename = title.equals("Graphe d'Appels") ? "callgraph.html" : "coupling_graph.html";
                 openInBrowser(filename);
             } catch (Exception ex) {
@@ -375,7 +410,11 @@ public class AnalyzerGUI {
     }
 
     /**
-     * Open HTML file in default browser
+     * Attempts to open the supplied filename in the user's default browser.
+     * The method is tolerant: if the desktop/browse action is not supported
+     * it simply logs the error.
+     *
+     * @param filename relative or absolute path to the HTML file to open
      */
     private void openInBrowser(String filename) {
         try {
@@ -388,7 +427,10 @@ public class AnalyzerGUI {
         }
     }
 
-    // UI Helper methods
+    /**
+     * Create a styled JButton used across the UI. This helper centralizes the
+     * look-and-feel used by the panels in the application.
+     */
     private JButton createButton(String text, Color bgColor) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 12));
@@ -415,6 +457,10 @@ public class AnalyzerGUI {
         return button;
     }
 
+    /**
+     * Create a side navigation button (used in the left sidebar). Buttons
+     * created here have a consistent style and mouse hover behavior.
+     */
     private JButton createSideButton(String text) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -443,6 +489,9 @@ public class AnalyzerGUI {
         return button;
     }
 
+    /**
+     * Helper to create a JMenu with consistent styling.
+     */
     private JMenu createMenu(String text) {
         JMenu menu = new JMenu(text);
         menu.setFont(new Font("Arial", Font.PLAIN, 12));
@@ -450,6 +499,10 @@ public class AnalyzerGUI {
         return menu;
     }
 
+    /**
+     * Darken a color by the specified factor (0..1). Used to create hover
+     * states for buttons in the UI.
+     */
     private Color darkenColor(Color color, float factor) {
         return new Color(
             (int) (color.getRed() * factor),
@@ -458,6 +511,9 @@ public class AnalyzerGUI {
         );
     }
 
+    /**
+     * Application entry point — constructs the AnalyzerGUI on the EDT.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(AnalyzerGUI::new);
     }

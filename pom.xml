@@ -10,5 +10,10 @@
       <artifactId>org.eclipse.jdt.core</artifactId>
       <version>3.32.0</version>
     </dependency>
+    <dependency>
+      <groupId>fr.inria.gforge.spoon</groupId>
+      <artifactId>spoon-core</artifactId>
+      <version>10.4.0</version>
+    </dependency>
   </dependencies>
 </project>

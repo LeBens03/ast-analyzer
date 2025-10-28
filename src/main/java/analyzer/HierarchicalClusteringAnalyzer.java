@@ -12,6 +12,34 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 
+/**
+ * Performs hierarchical (agglomerative) clustering over classes using a normalized
+ * class-coupling map as similarity. The analyzer builds a dendrogram by
+ * repeatedly merging the pair of clusters with highest average inter-cluster
+ * coupling. After clustering, subtrees can be identified as candidate modules
+ * using a coupling threshold.
+ *
+ * <p>Key behavior:
+ * <ul>
+ *   <li>The constructor takes a list of ClassInfo and a map of normalized
+ *       coupling scores between class pairs (keys are canonicalized as "A-B").</li>
+ *   <li>runClustering() produces the dendrogram (dendro.clusters holds levels).</li>
+ *   <li>identifyModules(cp) traverses the dendrogram, extracts subtree candidates
+ *       and filters them by their internal average coupling >= cp.</li>
+ *   <li>generateHtmlModules(filename) writes a simple HTML report listing found modules.</li>
+ * </ul></p>
+ *
+ * <p>Notes and limitations:
+ * <ul>
+ *   <li>Coupling values are expected to be normalized (0..1). If absolute call
+ *       counts are provided the identification heuristic may need tuning.</li>
+ *   <li>The clustering strategy is average-link (mean pairwise coupling)
+ *       approximated by computeInterClusterCoupling.</li>
+ *   <li>The implementation is intentionally small and readable: for large codebases
+ *       consider optimizations (priority queues, sparse data structures).</li>
+ * </ul>
+ * </p>
+ */
 public class HierarchicalClusteringAnalyzer {
 	
 	private Dendro dendro;
@@ -19,6 +47,14 @@ public class HierarchicalClusteringAnalyzer {
 	private Map<String, Double> normalizedCouplings;
 	private ArrayList<Dendro> modules;
 	
+	/**
+	 * Constructs an analyzer instance with the given class information and coupling map.
+	 * Initializes the dendrogram with each class as a separate cluster.
+	 * 
+	 * @param classes List of ClassInfo objects representing the classes to be analyzed.
+	 * @param couplings Map where keys are class pair identifiers (e.g., "A-B") and values
+	 *                  are the normalized coupling scores between the classes.
+	 */
 	public HierarchicalClusteringAnalyzer(List<ClassInfo> classes, Map<String, Double> couplings) {
 		dendro = new Dendro();
 		this.classes = classes;

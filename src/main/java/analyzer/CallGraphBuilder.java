@@ -7,7 +7,6 @@ import analyzer.Utils.ClassInfo;
 import analyzer.Utils.MethodInfo;
 
 /**
- * Enhanced call graph builder with interactive visualization.
  * Generates beautiful, interactive HTML graphs using Vis.js library.
  */
 public class CallGraphBuilder {

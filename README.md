@@ -1,61 +1,59 @@
-# TP - Analyse Statistique et Graphe d'Appel pour Applications Orientées Objet
+# Analyzer — Static analysis, coupling & module identification
 
-## Description
-Ce projet analyse le code source Java d'une application orientée objet pour extraire des statistiques et construire le graphe d'appel des méthodes. Il répond aux consignes suivantes :
+This project analyzes Java code to compute metrics, build call graphs and identify modules via hierarchical clustering.
 
-### Exercice 1 : Calcul statistique
-L'application calcule :
-1. **Nombre de classes** : Compte toutes les classes non interfaces.
-2. **Nombre de lignes de code** : Additionne les lignes de toutes les méthodes.
-3. **Nombre total de méthodes** : Compte toutes les méthodes dans toutes les classes.
-4. **Nombre total de packages** : Compte les packages distincts.
-5. **Nombre moyen de méthodes par classe** : Moyenne des méthodes par classe.
-6. **Nombre moyen de lignes de code par méthode** : Moyenne des lignes par méthode.
-7. **Nombre moyen d’attributs par classe** : Moyenne des attributs par classe.
-8. **Top 10% des classes par nombre de méthodes** : Liste les classes avec le plus de méthodes.
-9. **Top 10% des classes par nombre d’attributs** : Liste les classes avec le plus d’attributs.
-10. **Classes dans les deux catégories précédentes** : Intersection des deux tops.
-11. **Classes avec plus de X méthodes** : Liste les classes ayant plus de X méthodes (X configurable dynamiquement).
-12. **Top 10% des méthodes par nombre de lignes (par classe)** : Méthodes les plus longues par classe.
-13. **Nombre maximal de paramètres dans toutes les méthodes**.
+Features
+- Parse Java sources (Eclipse JDT AST or Spoon) and extract classes/methods
+- Compute class coupling (normalized) and generate an interactive coupling graph (Vis.js)
+- Build an interactive call graph (Vis.js)
+- Perform agglomerative hierarchical clustering on class coupling to identify candidate modules
+- Lightweight HTML reports: `callgraph.html`, `coupling_graph.html`, `modules.html`
 
-### Exercice 2 : Graphe d'appel
-- **Construction du graphe d'appel** : Affiche le graphe d'appel des méthodes (textuel, HTML interactif).
-- **Interface graphique (optionnelle)** : Affiche les statistiques dans une fenêtre Swing.
+Build
 
-## Structure du projet
-- `Analyzer.java` : Point d'entrée, analyse le code et calcule les statistiques.
-- `Utils.java` : Définitions des structures `ClassInfo` et `MethodInfo`.
-- `AppStatsGUI.java` : Interface graphique Swing pour afficher les statistiques.
-- `CallGraphBuilder.java` : Génère et affiche le graphe d'appel (console, HTML).
+The project uses Maven. Two options:
 
-## Installation
+- Using the wrapper (recommended):
 
-1. **Prérequis** :
-   - Java 11 ou supérieur
-   - Maven (pour la compilation)
-   - Dépendance : JDT Core (org.eclipse.jdt.core) pour l'analyse AST
+  ./mvnw -DskipTests package
 
-2. **Compilation** :
-   Dans le dossier du projet, exécutez :
-   ```bash
-   mvn clean package
-   ```
+- Using a system-installed Maven:
 
-3. **Exécution** :
-   Pour analyser un fichier ou dossier Java :
-   ```bash
-   java -cp target/classes analyzer.Analyzer 
-   ```
+  mvn -DskipTests package
 
-## Utilisation
-- Au lancement, saisir le chemin de l'application que vous souhaitez analiser.Après un menu principal s'affiche :
-  1. Statistiques
-  2. Graphe d'appels
-  3. Quitter
-- Si vous choisissez "Statistiques", un sous-menu propose :
-  1. Afficher les statistiques dans la console
-  2. Afficher les statistiques dans une interface graphique (Swing)
-  0. Retour au menu principal
-- Le graphe d'appel est affiché dans la console, exporté au format HTML interactif (`callgraph.html`).
-- Ouvrez `callgraph.html` dans un navigateur pour une visualisation interactive.
+If you don't have Maven installed on macOS, you can install it with Homebrew:
+
+  brew install maven
+
+Run (GUI)
+
+1. Build the project (see above).
+2. Run the GUI application (from your IDE or with `java -cp target/classes:target/dependency/* analyzer.Analyzer`).
+3. In the GUI select a folder or a Java file to analyze.
+4. Use the sidebar to view statistics, generate the call graph or the coupling analysis.
+
+Spoon-based analysis
+
+The project includes an alternative analysis runner that uses Spoon to build a model of the source tree and extract calls. This can be useful when the JDT-based parser doesn't find bindings or when you prefer a different AST engine.
+
+- In the GUI: use the "Couplage" panel and check "Utiliser Spoon pour cette analyse" to run Spoon on the selected folder.
+- Or run programmatically via `SpoonRunner.runSpoonAnalysis(Path inputPath, double cp)`.
+
+Generated reports
+
+- callgraph.html — interactive call graph (methods as nodes)
+- coupling_graph.html — class coupling graph (classes as nodes, weighted edges)
+- modules.html — identified modules (list) with an internal coupling score
+
+Tuning
+
+- The module identification threshold (cp) controls how strict the filter is when selecting subtrees as modules. Typical values: 0.01 — 0.05 depending on project size.
+
+Notes
+
+- The project includes a Maven wrapper (mvnw) to simplify builds on machines without Maven installed.
+- Vis.js is used in the generated HTML files; the pages load the Vis.js CDN.
+
+License
+
+This repository contains code developed for coursework. Adjust licensing headers if you republish the code.
