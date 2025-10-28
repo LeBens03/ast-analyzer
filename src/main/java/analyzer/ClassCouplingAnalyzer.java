@@ -297,4 +297,11 @@ public class ClassCouplingAnalyzer {
     public int getTotalCouplings() {
         return totalCouplings;
     }
+
+    /**
+     * Public getter for normalized couplings map (read-only view).
+     */
+    public Map<String, Double> getNormalizedCouplings() {
+        return Collections.unmodifiableMap(normalizedCouplings);
+    }
 }

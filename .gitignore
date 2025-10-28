@@ -20,3 +20,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Generated reports and outputs
+Rapport.pdf
+callgraph.html
+coupling_graph.html
+liens.txt
+modules.html
+test-app/

@@ -220,16 +220,102 @@ public class AnalyzerGUI {
      */
     private void showCoupling() {
         contentPanel.removeAll();
-        JPanel couplingPanel = createGraphPanel("Analyse du Couplage",
-            () -> {
-                ClassCouplingAnalyzer analyzer = new ClassCouplingAnalyzer(allClasses);
-                try {
-					analyzer.generateHtmlGraph("coupling_graph.html");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-            });
-        contentPanel.add(couplingPanel, BorderLayout.CENTER);
+
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBackground(BG_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titleLabel = new JLabel("Analyse du Couplage");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(PRIMARY_COLOR);
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        centerPanel.setBackground(BG_COLOR);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(12, 12, 12, 12);
+        gbc.anchor = GridBagConstraints.CENTER;
+
+        JLabel infoLabel = new JLabel(
+            "<html><div style='text-align: center; width: 420px;'>" +
+            "Générez le graphe de couplage et identifiez les modules via un clustering hiérarchique.<br><br>" +
+            "Ajustez le seuil de couplage (0.0 - 1.0) pour filtrer les modules.</div></html>");
+        infoLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        infoLabel.setForeground(SECONDARY_COLOR);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        centerPanel.add(infoLabel, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        JLabel thresholdLabel = new JLabel("Seuil de couplage (cp):");
+        thresholdLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        centerPanel.add(thresholdLabel, gbc);
+
+        gbc.gridx = 1;
+        JTextField thresholdField = new JTextField("0.02", 6);
+        thresholdField.setFont(new Font("Arial", Font.PLAIN, 13));
+        centerPanel.add(thresholdField, gbc);
+
+        gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        JButton generateBtn = createButton("Générer Graphe & Modules", ACCENT_COLOR);
+        centerPanel.add(generateBtn, gbc);
+
+        generateBtn.addActionListener(e -> {
+            generateBtn.setEnabled(false);
+            double threshold = 0.02;
+            try {
+                threshold = Double.parseDouble(thresholdField.getText());
+                if (threshold < 0 || threshold > 1) throw new NumberFormatException();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(mainFrame,
+                    "Seuil invalide. Entrez un nombre entre 0 et 1.",
+                    "Valeur invalide", JOptionPane.ERROR_MESSAGE);
+                generateBtn.setEnabled(true);
+                return;
+            }
+
+            // Run analysis in background
+            double finalThreshold = threshold;
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    ClassCouplingAnalyzer analyzer = new ClassCouplingAnalyzer(allClasses);
+                    try {
+                        analyzer.generateHtmlGraph("coupling_graph.html");
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+
+                    try {
+                        HierarchicalClusteringAnalyzer hc = new HierarchicalClusteringAnalyzer(allClasses, analyzer.getNormalizedCouplings());
+                        hc.runClusteringAndIdentifyModules(finalThreshold);
+                        hc.generateHtmlModules("modules.html");
+                    } catch (Exception exx) {
+                        exx.printStackTrace();
+                    }
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    generateBtn.setEnabled(true);
+                    JOptionPane.showMessageDialog(mainFrame,
+                        "Analyses générées: coupling_graph.html et modules.html",
+                        "Succès", JOptionPane.INFORMATION_MESSAGE);
+                    openInBrowser("coupling_graph.html");
+                    openInBrowser("modules.html");
+                }
+            };
+            worker.execute();
+        });
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+        contentPanel.add(panel, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
